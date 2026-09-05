@@ -15,7 +15,7 @@
                             </div>
 
                             <span class="text-xl font-extrabold">
-                                Job<span class="text-indigo-400">ly</span>
+                                Job<span class="text-indigo-400">Hub</span>
                             </span>
                         </a>
 

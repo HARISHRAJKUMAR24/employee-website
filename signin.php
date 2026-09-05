@@ -67,11 +67,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        
+        /* Password toggle button styles */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle:hover {
+            color: #1e293b;
+        }
+        .password-toggle:focus {
+            outline: none;
+        }
+        .password-input-wrapper {
+            position: relative;
+        }
+        .password-input-wrapper input {
+            padding-right: 45px;
+        }
     </style>
 </head>
 <body>
-
-
 
     <main class="min-h-screen flex items-center justify-center py-16 px-5">
         <div class="w-full max-w-md">
@@ -114,9 +141,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Password</label>
-                        <input type="password" name="password" required
-                               class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
-                               placeholder="Enter your password">
+                        <div class="password-input-wrapper mt-1">
+                            <input type="password" name="password" id="password" required
+                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+                                   placeholder="Enter your password">
+                            <button type="button" class="password-toggle" id="togglePassword" onclick="togglePasswordVisibility()">
+                                <i data-lucide="eye" id="eyeIcon" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex items-center justify-between">
@@ -144,7 +176,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
+        // Initialize Lucide icons
         lucide.createIcons();
+
+        // Password visibility toggle function
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Change icon to eye-off (slash)
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+                lucide.createIcons();
+            } else {
+                passwordInput.type = 'password';
+                // Change icon back to eye
+                eyeIcon.setAttribute('data-lucide', 'eye');
+                lucide.createIcons();
+            }
+        }
+
+        // Also support Enter key for form submission
+        document.getElementById('password').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                this.closest('form').submit();
+            }
+        });
     </script>
 </body>
 </html>

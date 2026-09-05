@@ -52,12 +52,7 @@
                                 <a href="profile.php" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                     <i data-lucide="user" class="h-4 w-4"></i> My Profile
                                 </a>
-                                <a href="my-applications.php" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                                    <i data-lucide="file-text" class="h-4 w-4"></i> My Applications
-                                </a>
-                                <a href="saved-jobs.php" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                                    <i data-lucide="bookmark" class="h-4 w-4"></i> Saved Jobs
-                                </a>
+
                                 <hr class="my-1 border-slate-100">
                                 <a href="logout.php" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">
                                     <i data-lucide="log-out" class="h-4 w-4"></i> Sign Out
@@ -74,9 +69,7 @@
                         Sign Up
                     </a>
                 <?php endif; ?>
-                <a href="post-job.php" class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700">
-                    Post a Job
-                </a>
+               
             </div>
 
             <!-- Mobile Button -->

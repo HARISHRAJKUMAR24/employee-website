@@ -85,11 +85,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        
+        /* Password toggle button styles */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .password-toggle:hover {
+            color: #1e293b;
+        }
+        .password-toggle:focus {
+            outline: none;
+        }
+        .password-input-wrapper {
+            position: relative;
+        }
+        .password-input-wrapper input {
+            padding-right: 45px;
+        }
+        .password-input-wrapper input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
     </style>
 </head>
 <body>
-
-   
 
     <main class="min-h-screen flex items-center justify-center py-16 px-5">
         <div class="w-full max-w-md">
@@ -124,14 +156,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="POST" class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Full Name *</label>
+                        <label class="block text-sm font-medium text-slate-700">Full Name <span class="text-red-500">*</span></label>
                         <input type="text" name="full_name" required
                                class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
                                placeholder="John Doe">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Email Address *</label>
+                        <label class="block text-sm font-medium text-slate-700">Email Address <span class="text-red-500">*</span></label>
                         <input type="email" name="email" required
                                class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
                                placeholder="john@example.com">
@@ -152,17 +184,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Password *</label>
-                        <input type="password" name="password" required minlength="6"
-                               class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
-                               placeholder="Min 6 characters">
+                        <label class="block text-sm font-medium text-slate-700">Password <span class="text-red-500">*</span></label>
+                        <div class="password-input-wrapper mt-1">
+                            <input type="password" name="password" id="password" required minlength="6"
+                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+                                   placeholder="Min 6 characters">
+                            <button type="button" class="password-toggle" onclick="togglePassword('password', 'passwordEyeIcon')">
+                                <i data-lucide="eye" id="passwordEyeIcon" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Confirm Password *</label>
-                        <input type="password" name="confirm_password" required
-                               class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
-                               placeholder="Confirm your password">
+                        <label class="block text-sm font-medium text-slate-700">Confirm Password <span class="text-red-500">*</span></label>
+                        <div class="password-input-wrapper mt-1">
+                            <input type="password" name="confirm_password" id="confirm_password" required
+                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+                                   placeholder="Confirm your password">
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirm_password', 'confirmEyeIcon')">
+                                <i data-lucide="eye" id="confirmEyeIcon" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -180,7 +222,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
+        // Initialize Lucide icons
         lucide.createIcons();
+
+        // Password visibility toggle function
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Change icon to eye-off (slash)
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+                lucide.createIcons();
+            } else {
+                passwordInput.type = 'password';
+                // Change icon back to eye
+                eyeIcon.setAttribute('data-lucide', 'eye');
+                lucide.createIcons();
+            }
+        }
+
+        // Real-time password match validation
+        document.getElementById('confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirm = this.value;
+            const confirmField = this;
+            
+            if (confirm.length > 0) {
+                if (password === confirm) {
+                    confirmField.classList.remove('border-red-500');
+                    confirmField.classList.add('border-emerald-500', 'ring-2', 'ring-emerald-200');
+                } else {
+                    confirmField.classList.remove('border-emerald-500', 'ring-2', 'ring-emerald-200');
+                    confirmField.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                }
+            } else {
+                confirmField.classList.remove('border-red-500', 'border-emerald-500', 'ring-2', 'ring-red-200', 'ring-emerald-200');
+            }
+        });
+
+        // Password strength indicator (optional)
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthIndicator = document.getElementById('passwordStrength');
+            
+            if (!strengthIndicator) {
+                // Create strength indicator if it doesn't exist
+                const indicator = document.createElement('div');
+                indicator.id = 'passwordStrength';
+                indicator.className = 'mt-1 text-xs';
+                this.parentNode.appendChild(indicator);
+            }
+            
+            const indicator = document.getElementById('passwordStrength');
+            if (password.length === 0) {
+                indicator.textContent = '';
+                indicator.className = 'mt-1 text-xs';
+                return;
+            }
+            
+            let strength = 'Weak';
+            let color = 'text-red-500';
+            
+            if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) {
+                strength = 'Strong';
+                color = 'text-emerald-500';
+            } else if (password.length >= 6 && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
+                strength = 'Medium';
+                color = 'text-amber-500';
+            }
+            
+            indicator.textContent = `Password Strength: ${strength}`;
+            indicator.className = `mt-1 text-xs ${color}`;
+        });
+
+        // Also support Enter key for form submission
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.closest('form')) {
+                    activeElement.closest('form').submit();
+                }
+            }
+        });
     </script>
 </body>
 </html>

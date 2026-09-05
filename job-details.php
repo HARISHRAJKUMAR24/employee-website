@@ -67,11 +67,30 @@ $job_views_limit = 0;
 $job_views_used = 0;
 $can_view_job = false;
 
+// Check if user has already applied FIRST (before incrementing views)
+$has_applied = false;
+$existing_application = null;
+$applicant_email = '';
+
 if ($is_logged_in) {
     try {
         $user_stmt = $pdo->prepare("SELECT * FROM employees WHERE id = ? AND is_active = 1");
         $user_stmt->execute([$_SESSION['employee_id']]);
         $user_data = $user_stmt->fetch();
+        
+        if ($user_data) {
+            $applicant_email = $user_data['email'];
+            
+            // Check if already applied for this job
+            $check_stmt = $pdo->prepare("
+                SELECT * FROM job_applications 
+                WHERE job_id = ? AND applicant_email = ?
+                ORDER BY applied_at DESC LIMIT 1
+            ");
+            $check_stmt->execute([$job_id, $applicant_email]);
+            $existing_application = $check_stmt->fetch();
+            $has_applied = !empty($existing_application);
+        }
         
         // Check if user has active subscription and get limits
         if ($user_data && $user_data['subscription_status'] == 'active' && strtotime($user_data['subscription_expiry_date']) > time()) {
@@ -96,16 +115,19 @@ if ($is_logged_in) {
                     // User can view this job
                     $can_view_job = true;
                     
-                    // Increment job views
-                    $update_views = $pdo->prepare("
-                        UPDATE employees 
-                        SET job_views_used = job_views_used + 1 
-                        WHERE id = ?
-                    ");
-                    $update_views->execute([$_SESSION['employee_id']]);
-                    
-                    // Update local variable
-                    $job_views_used = $job_views_used + 1;
+                    // ONLY INCREMENT VIEWS IF USER HAS NOT ALREADY APPLIED
+                    if (!$has_applied) {
+                        // Increment job views
+                        $update_views = $pdo->prepare("
+                            UPDATE employees 
+                            SET job_views_used = job_views_used + 1 
+                            WHERE id = ?
+                        ");
+                        $update_views->execute([$_SESSION['employee_id']]);
+                        
+                        // Update local variable
+                        $job_views_used = $job_views_used + 1;
+                    }
                 }
             }
         } elseif ($user_data) {
@@ -119,18 +141,8 @@ if ($is_logged_in) {
     }
 }
 
-// Check if user has already applied (using email from session or user data)
-$has_applied = false;
-$existing_application = null;
-$applicant_email = '';
-
-if ($is_logged_in && $user_data) {
-    $applicant_email = $user_data['email'];
-} elseif (isset($_SESSION['applicant_email'])) {
-    $applicant_email = $_SESSION['applicant_email'];
-}
-
-if (!empty($applicant_email)) {
+// Check if user has already applied (using email from session or user data) - already checked above
+if (!empty($applicant_email) && !$has_applied) {
     try {
         $check_stmt = $pdo->prepare("
             SELECT * FROM job_applications 
@@ -180,10 +192,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
         } elseif (!isset($_FILES['resume_file']) || $_FILES['resume_file']['error'] !== UPLOAD_ERR_OK) {
             $application_error = 'Please upload your resume.';
         } else {
-            // Process file upload - Use MAIN_URL path
+            // Process file upload
             $upload_dir = dirname(__DIR__) . '/company.job.panel/uploads/resumes/';
             
-            // Create directory if it doesn't exist
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
@@ -202,10 +213,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
                 if ($file_size > $max_size) {
                     $application_error = 'File size must be less than 5MB.';
                 } elseif (move_uploaded_file($_FILES['resume_file']['tmp_name'], $file_path)) {
-                    // Store relative path for database (relative to employees.website)
                     $db_file_path = 'uploads/resumes/' . $file_name;
                     
-                    // Insert application into database
                     try {
                         $insert_stmt = $pdo->prepare("
                             INSERT INTO job_applications (
@@ -220,7 +229,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
                             $experience_years, $current_company, $current_position
                         ]);
 
-                        // Store applicant email in session
                         $_SESSION['applicant_email'] = $applicant_email;
                         $application_success = true;
                         $show_success_popup = true;
@@ -229,7 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
                     } catch (PDOException $e) {
                         $application_error = 'Failed to submit application. Please try again.';
                         error_log("Application submission error: " . $e->getMessage());
-                        // Delete uploaded file if database insert fails
                         if (file_exists($file_path)) {
                             unlink($file_path);
                         }
@@ -276,7 +283,6 @@ function formatSalary($amount) {
         .job-card { transition: all 0.3s ease; }
         .job-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
         
-        /* Success Popup Animation */
         .popup-overlay {
             display: none;
             position: fixed;
@@ -339,7 +345,6 @@ function formatSalary($amount) {
             color: white;
         }
         
-        /* Already Applied Badge */
         .already-applied-badge {
             background: #fef3c7;
             color: #92400e;
@@ -351,7 +356,6 @@ function formatSalary($amount) {
             gap: 10px;
         }
 
-        /* Login Required Card */
         .login-required-card {
             background: linear-gradient(135deg, #f0f4ff 0%, #e8edff 100%);
             border: 2px dashed #818cf8;
@@ -360,7 +364,6 @@ function formatSalary($amount) {
             text-align: center;
         }
 
-        /* Limit Reached Card */
         .limit-reached-card {
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border: 2px solid #f59e0b;
@@ -369,11 +372,6 @@ function formatSalary($amount) {
             text-align: center;
         }
         
-        .limit-reached-card .icon {
-            color: #d97706;
-        }
-        
-        /* Remaining Views Badge */
         .views-badge {
             display: inline-block;
             background: #e0e7ff;
@@ -426,6 +424,11 @@ function formatSalary($amount) {
                             <strong>Job Views:</strong> 
                             <?php echo $job_views_used; ?> / <?php echo $job_views_limit; ?>
                         </span>
+                        <?php if ($has_applied): ?>
+                            <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                <i data-lucide="check-circle" class="inline h-3 w-3 mr-1"></i> Applied
+                            </span>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <?php if ($can_view_job): ?>
@@ -480,6 +483,11 @@ function formatSalary($amount) {
                                             <i data-lucide="calendar" class="inline h-4 w-4"></i>
                                             Posted: <?php echo date('M d, Y', strtotime($job['created_at'])); ?>
                                         </span>
+                                        <?php if ($has_applied): ?>
+                                            <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                                <i data-lucide="check-circle" class="inline h-3 w-3 mr-1"></i> Already Applied
+                                            </span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
